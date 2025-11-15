@@ -1,0 +1,1 @@
+// Sidebar component - responsive navigation

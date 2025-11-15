@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment
+.env
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+backend/logs/
+
+# Cache
+backend/cache/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp

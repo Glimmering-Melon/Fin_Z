@@ -1,0 +1,1 @@
+-- Watchlists table migration

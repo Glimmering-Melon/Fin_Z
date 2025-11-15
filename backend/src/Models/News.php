@@ -1,0 +1,2 @@
+<?php
+// News model

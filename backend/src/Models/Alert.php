@@ -1,0 +1,2 @@
+<?php
+// Alert model

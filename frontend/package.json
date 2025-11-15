@@ -1,0 +1,13 @@
+{
+  "name": "stock-dashboard-frontend",
+  "version": "1.0.0",
+  "description": "Stock market dashboard frontend",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "chart.js": "^4.0.0",
+    "d3": "^7.0.0"
+  }
+}
