@@ -1,2 +1,0 @@
-<?php
-// Rate limiting middleware

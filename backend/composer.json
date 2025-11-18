@@ -1,7 +1,0 @@
-{
-  "name": "stock-dashboard/backend",
-  "description": "Stock market dashboard backend API",
-  "require": {
-    "php": ">=8.0"
-  }
-}

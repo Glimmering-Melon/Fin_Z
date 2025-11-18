@@ -1,2 +1,0 @@
-<?php
-// Application entry point

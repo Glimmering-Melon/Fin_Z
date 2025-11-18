@@ -1,1 +1,0 @@
--- Stock history table migration

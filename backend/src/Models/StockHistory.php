@@ -1,2 +1,0 @@
-<?php
-// Stock history model

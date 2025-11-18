@@ -1,1 +1,0 @@
-// Filter component - dropdown filters
