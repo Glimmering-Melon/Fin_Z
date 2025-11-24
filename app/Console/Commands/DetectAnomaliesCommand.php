@@ -2,16 +2,22 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\DetectAnomaliesJob;
 use Illuminate\Console\Command;
 
 class DetectAnomaliesCommand extends Command
 {
     protected $signature = 'stocks:detect-anomalies';
-    protected $description = 'Detect anomalies in stock data';
+    protected $description = 'Detect anomalies in stock data (volume spikes and price jumps)';
 
     public function handle()
     {
-        // TODO: Dispatch DetectAnomaliesJob
-        $this->info('Anomaly detection completed');
+        $this->info('Starting anomaly detection...');
+
+        DetectAnomaliesJob::dispatch();
+
+        $this->info('Anomaly detection job dispatched successfully');
+        
+        return Command::SUCCESS;
     }
 }
