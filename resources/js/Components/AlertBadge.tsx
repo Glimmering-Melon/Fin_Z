@@ -12,19 +12,16 @@ export default function AlertBadge({ severity, className }: AlertBadgeProps) {
       bg: 'bg-red-500',
       text: 'text-white',
       label: 'HIGH',
-      icon: '🔴',
     },
     medium: {
       bg: 'bg-yellow-500',
       text: 'text-white',
       label: 'MEDIUM',
-      icon: '🟡',
     },
     low: {
       bg: 'bg-blue-500',
       text: 'text-white',
       label: 'LOW',
-      icon: '🔵',
     },
   };
 
@@ -33,14 +30,13 @@ export default function AlertBadge({ severity, className }: AlertBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+        'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold',
         config.bg,
         config.text,
         className
       )}
     >
-      <span>{config.icon}</span>
-      <span>{config.label}</span>
+      {config.label}
     </span>
   );
 }

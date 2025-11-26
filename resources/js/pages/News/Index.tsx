@@ -60,13 +60,20 @@ export default function NewsIndex({ news, filters, statistics, sources }: NewsPa
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 p-6">
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">
-              📰 News Feed
-            </h1>
-            <p className="text-gray-400">
-              Financial news with AI-powered sentiment analysis
-            </p>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="rounded-lg bg-blue-500/10 p-3">
+              <svg className="h-8 w-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white">
+                News Feed
+              </h1>
+              <p className="text-gray-400">
+                Financial news with AI-powered sentiment analysis
+              </p>
+            </div>
           </div>
 
           {/* Statistics */}
@@ -180,9 +187,12 @@ export default function NewsIndex({ news, filters, statistics, sources }: NewsPa
                 setMinScore('0.7');
                 handleFilter();
               }}
-              className="rounded-full border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/20"
+              className="inline-flex items-center gap-2 rounded-full border border-green-500/50 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-400 transition-colors hover:bg-green-500/20"
             >
-              📈 Highly Positive
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              Highly Positive
             </button>
             <button
               onClick={() => {
@@ -190,18 +200,24 @@ export default function NewsIndex({ news, filters, statistics, sources }: NewsPa
                 setMinScore('0.7');
                 handleFilter();
               }}
-              className="rounded-full border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+              className="inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
             >
-              📉 Highly Negative
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+              </svg>
+              Highly Negative
             </button>
             <button
               onClick={() => {
                 setKeyword('market');
                 handleFilter();
               }}
-              className="rounded-full border border-blue-500/50 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
+              className="inline-flex items-center gap-2 rounded-full border border-blue-500/50 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
             >
-              🏢 Market News
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Market News
             </button>
           </div>
 

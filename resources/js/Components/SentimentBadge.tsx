@@ -19,19 +19,16 @@ export default function SentimentBadge({
       bg: 'bg-green-500',
       text: 'text-white',
       label: 'Positive',
-      icon: '📈',
     },
     neutral: {
       bg: 'bg-gray-500',
       text: 'text-white',
       label: 'Neutral',
-      icon: '➖',
     },
     negative: {
       bg: 'bg-red-500',
       text: 'text-white',
       label: 'Negative',
-      icon: '📉',
     },
   };
 
@@ -47,10 +44,9 @@ export default function SentimentBadge({
       )}
       title={score ? `Score: ${score.toFixed(2)}` : undefined}
     >
-      <span>{config.icon}</span>
       <span>{config.label}</span>
       {showScore && score !== undefined && (
-        <span className="ml-1 opacity-90">({score.toFixed(2)})</span>
+        <span className="opacity-90">({score.toFixed(2)})</span>
       )}
     </span>
   );

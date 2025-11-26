@@ -15,13 +15,18 @@ Route::get('/stocks', [StockController::class, 'index']);
 Route::get('/stocks/{symbol}', [StockController::class, 'show']);
 Route::get('/stocks/{symbol}/history', [StockController::class, 'history']);
 
-// News
+// News (Nhẩn)
 Route::get('/news', [NewsController::class, 'index']);
-Route::get('/news/sentiment', [NewsController::class, 'sentiment']);
+Route::get('/news/statistics', [NewsController::class, 'statistics']);
+Route::get('/news/sources', [NewsController::class, 'sources']);
+Route::get('/news/{id}', [NewsController::class, 'show']);
 
-// Alerts
+// Alerts (Nhẩn)
 Route::get('/alerts', [AlertController::class, 'index']);
-Route::patch('/alerts/{id}/read', [AlertController::class, 'markAsRead']);
+Route::get('/alerts/statistics', [AlertController::class, 'statistics']);
+Route::post('/alerts/{id}/mark-as-read', [AlertController::class, 'markAsRead']);
+Route::post('/alerts/mark-multiple-as-read', [AlertController::class, 'markMultipleAsRead']);
+Route::delete('/alerts/cleanup', [AlertController::class, 'cleanup']);
 
 // Heatmap
 Route::get('/heatmap', [HeatmapController::class, 'index']);
