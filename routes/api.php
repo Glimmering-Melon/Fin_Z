@@ -27,7 +27,9 @@ Route::patch('/alerts/{id}/read', [AlertController::class, 'markAsRead']);
 Route::get('/heatmap', [HeatmapController::class, 'index']);
 
 // Simulator
-Route::post('/simulator', [SimulatorController::class, 'simulate']);
+Route::post('/simulator/simulate', [SimulatorController::class, 'simulate']);
+Route::post('/simulator/compare', [SimulatorController::class, 'compare']);
+Route::post('/simulator/performance', [SimulatorController::class, 'performance']);
 
 // Watchlist
 Route::get('/user/watchlist', [WatchlistController::class, 'index']);
