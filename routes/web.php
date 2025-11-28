@@ -7,8 +7,14 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\SimulatorController;
 use App\Http\Controllers\SettingsController;
+use Inertia\Inertia;
 
 // TODO: Add authentication routes
+
+// Test route for Watchlist (no auth required)
+Route::get('/test/watchlist', function () {
+    return Inertia::render('WatchlistTest');
+})->name('test.watchlist');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
