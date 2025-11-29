@@ -22,13 +22,13 @@ class WatchlistTestSeeder extends Seeder
             ]
         );
 
-        // Tạo sample stocks
+        // Tạo sample stocks (US stocks cho Finnhub API)
         $stocks = [
-            ['symbol' => 'VNM', 'name' => 'Vinamilk', 'exchange' => 'HOSE', 'sector' => 'Consumer Goods'],
-            ['symbol' => 'VIC', 'name' => 'Vingroup', 'exchange' => 'HOSE', 'sector' => 'Real Estate'],
-            ['symbol' => 'HPG', 'name' => 'Hoa Phat Group', 'exchange' => 'HOSE', 'sector' => 'Materials'],
-            ['symbol' => 'VHM', 'name' => 'Vinhomes', 'exchange' => 'HOSE', 'sector' => 'Real Estate'],
-            ['symbol' => 'FPT', 'name' => 'FPT Corporation', 'exchange' => 'HOSE', 'sector' => 'Technology'],
+            ['symbol' => 'AAPL', 'name' => 'Apple Inc.', 'exchange' => 'NASDAQ', 'sector' => 'Technology'],
+            ['symbol' => 'MSFT', 'name' => 'Microsoft Corporation', 'exchange' => 'NASDAQ', 'sector' => 'Technology'],
+            ['symbol' => 'GOOGL', 'name' => 'Alphabet Inc.', 'exchange' => 'NASDAQ', 'sector' => 'Technology'],
+            ['symbol' => 'TSLA', 'name' => 'Tesla Inc.', 'exchange' => 'NASDAQ', 'sector' => 'Automotive'],
+            ['symbol' => 'AMZN', 'name' => 'Amazon.com Inc.', 'exchange' => 'NASDAQ', 'sector' => 'E-commerce'],
         ];
 
         foreach ($stocks as $stockData) {
@@ -76,7 +76,7 @@ class WatchlistTestSeeder extends Seeder
         }
 
         // Thêm 2-3 stocks vào watchlist
-        $stocksToWatch = Stock::whereIn('symbol', ['VNM', 'FPT', 'HPG'])->get();
+        $stocksToWatch = Stock::whereIn('symbol', ['AAPL', 'MSFT', 'TSLA'])->get();
         foreach ($stocksToWatch as $stock) {
             Watchlist::firstOrCreate([
                 'user_id' => $user->id,

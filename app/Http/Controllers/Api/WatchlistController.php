@@ -5,33 +5,39 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Watchlist;
 use App\Models\Stock;
+use App\Services\StockPriceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WatchlistController extends Controller
 {
+    protected $stockPriceService;
+
+    public function __construct(StockPriceService $stockPriceService)
+    {
+        $this->stockPriceService = $stockPriceService;
+    }
+
     public function index()
     {
         $userId = Auth::id() ?? 1; // TODO: Remove fallback when auth is implemented
         
         $watchlist = Watchlist::where('user_id', $userId)
-            ->with(['stock.prices' => function ($query) {
-                $query->latest()->limit(2);
-            }])
+            ->with('stock')
             ->get()
             ->map(function ($item) {
                 $stock = $item->stock;
-                $prices = $stock->prices;
                 
-                $currentPrice = $prices->first();
-                $previousPrice = $prices->skip(1)->first();
+                // Lấy giá real-time từ Finnhub API (hoặc fallback database)
+                $priceData = $this->stockPriceService->getPrice($stock->symbol);
                 
-                $change = 0;
-                $changePercent = 0;
-                
-                if ($currentPrice && $previousPrice) {
-                    $change = $currentPrice->close - $previousPrice->close;
-                    $changePercent = ($change / $previousPrice->close) * 100;
+                if (!$priceData) {
+                    // Nếu cả API và database đều fail
+                    $priceData = [
+                        'price' => 0,
+                        'change' => 0,
+                        'change_percent' => 0,
+                    ];
                 }
                 
                 return [
@@ -39,9 +45,9 @@ class WatchlistController extends Controller
                     'stock_id' => $stock->id,
                     'symbol' => $stock->symbol,
                     'name' => $stock->name,
-                    'price' => $currentPrice ? $currentPrice->close : 0,
-                    'change' => round($change, 2),
-                    'change_percent' => round($changePercent, 2),
+                    'price' => $priceData['price'],
+                    'change' => $priceData['change'],
+                    'change_percent' => $priceData['change_percent'],
                     'added_at' => $item->created_at,
                 ];
             });
@@ -56,15 +62,62 @@ class WatchlistController extends Controller
         ]);
         
         $userId = Auth::id() ?? 1; // TODO: Remove fallback when auth is implemented
+        $symbol = strtoupper($request->symbol);
         
-        $stock = Stock::where('symbol', $request->symbol)->first();
+        // Tìm hoặc tạo stock mới
+        $stock = Stock::where('symbol', $symbol)->first();
         
         if (!$stock) {
-            return response()->json([
-                'message' => 'Stock not found'
-            ], 404);
+            // Tự động tạo stock mới nếu chưa có
+            // Thử lấy thông tin từ Finnhub API
+            $priceData = $this->stockPriceService->getRealTimePrice($symbol);
+            
+            // Tạo stock mới (cho phép tạo ngay cả khi API fail)
+            $stock = Stock::create([
+                'symbol' => $symbol,
+                'name' => $priceData ? ($symbol . ' Inc.') : $symbol,
+                'exchange' => 'US',
+                'sector' => 'Unknown',
+            ]);
+            
+            // Nếu có data từ API, tạo luôn stock price
+            if ($priceData) {
+                \App\Models\StockPrice::create([
+                    'stock_id' => $stock->id,
+                    'date' => now(),
+                    'open' => $priceData['open'] ?? $priceData['price'],
+                    'high' => $priceData['high'] ?? $priceData['price'],
+                    'low' => $priceData['low'] ?? $priceData['price'],
+                    'close' => $priceData['price'],
+                    'volume' => 0,
+                ]);
+            } else {
+                // Tạo fake price để test
+                $fakePrice = rand(50, 200);
+                \App\Models\StockPrice::create([
+                    'stock_id' => $stock->id,
+                    'date' => now()->subDay(),
+                    'open' => $fakePrice * 0.98,
+                    'high' => $fakePrice * 1.02,
+                    'low' => $fakePrice * 0.97,
+                    'close' => $fakePrice,
+                    'volume' => rand(1000000, 10000000),
+                ]);
+                
+                $todayPrice = $fakePrice * (1 + rand(-5, 10) / 100);
+                \App\Models\StockPrice::create([
+                    'stock_id' => $stock->id,
+                    'date' => now(),
+                    'open' => $todayPrice * 0.98,
+                    'high' => $todayPrice * 1.02,
+                    'low' => $todayPrice * 0.97,
+                    'close' => $todayPrice,
+                    'volume' => rand(1000000, 10000000),
+                ]);
+            }
         }
         
+        // Check duplicate
         $existing = Watchlist::where('user_id', $userId)
             ->where('stock_id', $stock->id)
             ->first();
@@ -75,6 +128,7 @@ class WatchlistController extends Controller
             ], 409);
         }
         
+        // Thêm vào watchlist
         $watchlist = Watchlist::create([
             'user_id' => $userId,
             'stock_id' => $stock->id,
@@ -105,5 +159,18 @@ class WatchlistController extends Controller
         return response()->json([
             'message' => 'Stock removed from watchlist'
         ]);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('q', '');
+        
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+        
+        $results = $this->stockPriceService->searchStocks($query);
+        
+        return response()->json($results);
     }
 }
