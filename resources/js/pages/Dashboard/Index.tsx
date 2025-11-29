@@ -1,6 +1,20 @@
 import MainLayout from '@/Layouts/MainLayout';
+import MarketOverviewWidget from '@/Components/MarketOverviewWidget';
 
-export default function Dashboard() {
+interface MarketIndex {
+  index: string;
+  value: number;
+  change: number;
+  percentChange: number;
+  volume: number;
+  lastUpdated: string;
+}
+
+interface DashboardProps {
+  marketOverview: MarketIndex[];
+}
+
+export default function Dashboard({ marketOverview }: DashboardProps) {
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -8,7 +22,10 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-white">Market Overview Dashboard</h1>
           <p className="mt-1 text-sm text-gray-400">Theo dõi thị trường chứng khoán Việt Nam</p>
         </div>
-        {/* TODO: VN-Index, HNX-Index, UPCOM */}
+
+        {/* Market Overview Widget */}
+        <MarketOverviewWidget data={marketOverview} autoRefresh={true} refreshInterval={30000} />
+
         {/* TODO: Top gainers/losers */}
         {/* TODO: Volume chart */}
         {/* TODO: Watchlist */}
