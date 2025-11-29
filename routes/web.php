@@ -7,6 +7,7 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\SimulatorController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ProfileController;
 
 // TODO: Add authentication routes
 
@@ -24,4 +25,8 @@ Route::get('/', function () {
     Route::get('/simulator', [SimulatorController::class, 'index'])->name('simulator');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    
+    // Profile routes
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 // });

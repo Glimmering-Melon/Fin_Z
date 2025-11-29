@@ -23,7 +23,9 @@ export default function UserMenu({ user }: UserMenuProps) {
   }, []);
 
   const handleLogout = () => {
-    router.post('/logout');
+    // TODO: Implement logout functionality
+    // router.post('/logout');
+    alert('Logout functionality will be implemented later');
   };
 
   // Get user initials for avatar
