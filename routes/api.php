@@ -93,3 +93,4 @@ Route::post('/simulator/performance', [SimulatorController::class, 'performance'
 Route::get('/user/watchlist', [WatchlistController::class, 'index']);
 Route::post('/user/watchlist', [WatchlistController::class, 'store']);
 Route::delete('/user/watchlist/{id}', [WatchlistController::class, 'destroy']);
+Route::get('/stocks/search', [WatchlistController::class, 'search']);

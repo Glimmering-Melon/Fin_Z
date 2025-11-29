@@ -8,6 +8,7 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\SimulatorController;
 use App\Http\Controllers\SettingsController;
+use Inertia\Inertia;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
 
@@ -39,7 +40,6 @@ Route::middleware(['guest'])->group(function () {
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/chart', [ChartController::class, 'index'])->name('chart');
     Route::get('/heatmap', [HeatmapController::class, 'index'])->name('heatmap');
