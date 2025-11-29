@@ -1,15 +1,20 @@
-import React from 'react';
+import MainLayout from '@/Layouts/MainLayout';
 
 export default function Chart() {
   return (
-    <div>
-      <h1>Stock Chart</h1>
-      {/* TODO: Time-series chart with Chart.js */}
-      {/* TODO: Line chart for price */}
-      {/* TODO: Bar chart for volume */}
-      {/* TODO: Timeframe selector (1D, 5D, 1M, 3M, 6M, YTD) */}
-      {/* TODO: Candle interval selector (1D, 1W, 1M) */}
-      {/* TODO: Compare multiple stocks */}
-    </div>
+    <MainLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Stock Chart</h1>
+          <p className="mt-1 text-sm text-gray-400">Biểu đồ giá cổ phiếu chi tiết</p>
+        </div>
+        {/* TODO: Time-series chart with Chart.js */}
+        {/* TODO: Line chart for price */}
+        {/* TODO: Bar chart for volume */}
+        {/* TODO: Timeframe selector (1D, 5D, 1M, 3M, 6M, YTD) */}
+        {/* TODO: Candle interval selector (1D, 1W, 1M) */}
+        {/* TODO: Compare multiple stocks */}
+      </div>
+    </MainLayout>
   );
 }
