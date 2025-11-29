@@ -36,12 +36,14 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 });
 
+// Public route for testing
+Route::get('/chart', [ChartController::class, 'index'])->name('chart');
+
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/chart', [ChartController::class, 'index'])->name('chart');
     Route::get('/heatmap', [HeatmapController::class, 'index'])->name('heatmap');
     Route::get('/news', [NewsController::class, 'index'])->name('news');
     Route::get('/simulator', [SimulatorController::class, 'index'])->name('simulator');
