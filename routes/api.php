@@ -69,16 +69,19 @@ Route::get('/stocks/{symbol}/history', [StockController::class, 'history']);
 Route::get('/news', [NewsController::class, 'index']);
 Route::get('/news/sentiment', [NewsController::class, 'sentiment']);
 
+// Watchlist (temporarily without auth for testing)
+Route::get('/user/watchlist', [WatchlistController::class, 'index']);
+Route::post('/user/watchlist', [WatchlistController::class, 'store']);
+Route::delete('/user/watchlist/{id}', [WatchlistController::class, 'destroy']);
+
+// Anomaly Detection
+Route::get('/anomalies', [\App\Http\Controllers\Api\AnomalyController::class, 'index']);
+
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
     // Alerts
     Route::get('/alerts', [AlertController::class, 'index']);
     Route::patch('/alerts/{id}/read', [AlertController::class, 'markAsRead']);
-
-    // Watchlist
-    Route::get('/user/watchlist', [WatchlistController::class, 'index']);
-    Route::post('/user/watchlist', [WatchlistController::class, 'store']);
-    Route::delete('/user/watchlist/{id}', [WatchlistController::class, 'destroy']);
 });
 
 // Heatmap
@@ -88,9 +91,3 @@ Route::get('/heatmap', [HeatmapController::class, 'index']);
 Route::post('/simulator/simulate', [SimulatorController::class, 'simulate']);
 Route::post('/simulator/compare', [SimulatorController::class, 'compare']);
 Route::post('/simulator/performance', [SimulatorController::class, 'performance']);
-
-// Watchlist
-Route::get('/user/watchlist', [WatchlistController::class, 'index']);
-Route::post('/user/watchlist', [WatchlistController::class, 'store']);
-Route::delete('/user/watchlist/{id}', [WatchlistController::class, 'destroy']);
-Route::get('/stocks/search', [WatchlistController::class, 'search']);

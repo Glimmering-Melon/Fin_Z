@@ -12,13 +12,14 @@ class SimulatorService
     /**
      * Simulate investment for a single stock
      *
-     * @param float $amount Investment amount in VND
-     * @param string $symbol Stock symbol (e.g., 'VNM', 'VCB')
+     * @param float $amount Investment amount in USD
+     * @param string $symbol Stock symbol (e.g., 'AAPL', 'MSFT')
      * @param string $startDate Start date in Y-m-d format
+     * @param string|null $endDate End date in Y-m-d format (optional, defaults to latest)
      * @return array Simulation results
      * @throws \Exception
      */
-    public function simulate(float $amount, string $symbol, string $startDate): array
+    public function simulate(float $amount, string $symbol, string $startDate, ?string $endDate = null): array
     {
         // Validate amount
         if ($amount <= 0) {
@@ -50,22 +51,34 @@ class SimulatorService
             throw new \Exception("No price data available for {$symbol} from {$startDate->format('Y-m-d')}");
         }
 
-        // Get current/latest price
-        $currentPrice = StockPrice::where('stock_id', $stock->id)
-            ->orderBy('date', 'desc')
-            ->first();
+        // Get end price (either specified end date or latest)
+        if ($endDate) {
+            $endDateParsed = Carbon::parse($endDate);
+            $currentPrice = StockPrice::where('stock_id', $stock->id)
+                ->where('date', '<=', $endDateParsed)
+                ->orderBy('date', 'desc')
+                ->first();
+            
+            if (!$currentPrice) {
+                throw new \Exception("No price data available for {$symbol} up to {$endDateParsed->format('Y-m-d')}");
+            }
+        } else {
+            $currentPrice = StockPrice::where('stock_id', $stock->id)
+                ->orderBy('date', 'desc')
+                ->first();
 
-        if (!$currentPrice) {
-            throw new \Exception("No current price data available for {$symbol}");
+            if (!$currentPrice) {
+                throw new \Exception("No current price data available for {$symbol}");
+            }
         }
 
-        // Calculate shares bought (round down to nearest 100 shares - lot size in Vietnam)
+        // Calculate shares bought (US stocks - can buy fractional shares)
         $pricePerShare = (float) $startPrice->close;
         $sharesRaw = $amount / $pricePerShare;
-        $shares = floor($sharesRaw / 100) * 100; // Round down to nearest lot (100 shares)
+        $shares = floor($sharesRaw * 100) / 100; // Round down to 2 decimal places
 
         if ($shares <= 0) {
-            throw new \Exception("Investment amount too small. Minimum required: " . number_format($pricePerShare * 100, 0) . " VND");
+            throw new \Exception("Investment amount too small. Minimum required: $" . number_format($pricePerShare, 2));
         }
 
         // Calculate actual investment (after rounding shares)
@@ -114,7 +127,6 @@ class SimulatorService
             ],
             'shares' => [
                 'quantity' => $shares,
-                'lots' => $shares / 100,
             ],
             'returns' => [
                 'current_value' => $currentValue,
@@ -128,12 +140,13 @@ class SimulatorService
     /**
      * Compare investment simulation for multiple stocks
      *
-     * @param float $amount Investment amount per stock in VND
+     * @param float $amount Investment amount per stock in USD
      * @param array $symbols Array of stock symbols
      * @param string $startDate Start date in Y-m-d format
+     * @param string|null $endDate End date in Y-m-d format (optional)
      * @return array Comparison results
      */
-    public function compareMultiple(float $amount, array $symbols, string $startDate): array
+    public function compareMultiple(float $amount, array $symbols, string $startDate, ?string $endDate = null): array
     {
         if (empty($symbols)) {
             throw new \InvalidArgumentException('At least one stock symbol is required');
@@ -148,7 +161,7 @@ class SimulatorService
 
         foreach ($symbols as $symbol) {
             try {
-                $results[] = $this->simulate($amount, $symbol, $startDate);
+                $results[] = $this->simulate($amount, $symbol, $startDate, $endDate);
             } catch (\Exception $e) {
                 $errors[] = [
                     'symbol' => $symbol,

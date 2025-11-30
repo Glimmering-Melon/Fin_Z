@@ -39,6 +39,9 @@ Route::middleware(['guest'])->group(function () {
 
 // Public route for testing
 Route::get('/chart', [ChartController::class, 'index'])->name('chart');
+Route::get('/watchlist', function () {
+    return Inertia::render('Watchlist/Index');
+})->name('watchlist');
 
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {

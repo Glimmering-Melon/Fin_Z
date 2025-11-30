@@ -1,252 +1,331 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '@/Components/MainLayout';
-import CombinedChart from '@/Components/Charts/CombinedChart';
-import CompareChart from '@/Components/Charts/CompareChart';
-import StockSelector from '@/Components/StockSelector';
+import axios from 'axios';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
-type Timeframe = '1D' | '5D' | '1M' | '3M' | '6M' | 'YTD';
-type ViewMode = 'single' | 'compare';
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
-interface StockData {
-  timestamps: string[];
-  open: number[];
-  high: number[];
-  low: number[];
-  close: number[];
-  volume: number[];
-}
-
-interface StockCompareData {
+interface WatchlistStock {
+  id: number;
   symbol: string;
-  timestamps: string[];
-  close: number[];
-  volume: number[];
+  name: string;
 }
 
-export default function Chart() {
-  const [viewMode, setViewMode] = useState<ViewMode>('single');
-  const [symbol, setSymbol] = useState('VNM');
-  const [compareSymbols, setCompareSymbols] = useState<string[]>(['VNM', 'VCB']);
-  const [timeframe, setTimeframe] = useState<Timeframe>('3M');
-  const [data, setData] = useState<StockData | null>(null);
-  const [compareData, setCompareData] = useState<StockCompareData[]>([]);
+interface ChartData {
+  timestamps: string[];
+  close: number[];
+}
+
+export default function ChartIndex() {
+  const [watchlistStocks, setWatchlistStocks] = useState<WatchlistStock[]>([]);
+  const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
+  const [timeframe, setTimeframe] = useState<'1M' | '3M' | '6M' | '1Y'>('3M');
+  const [chartDatasets, setChartDatasets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [labels, setLabels] = useState<string[]>([]);
 
-  const timeframes: Timeframe[] = ['1D', '5D', '1M', '3M', '6M', 'YTD'];
-
-  const getDaysFromTimeframe = (tf: Timeframe): number => {
-    switch (tf) {
-      case '1D':
-        return 1;
-      case '5D':
-        return 5;
-      case '1M':
-        return 30;
-      case '3M':
-        return 90;
-      case '6M':
-        return 180;
-      case 'YTD':
-        return Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24));
-      default:
-        return 90;
-    }
-  };
+  const colors = [
+    { border: 'rgb(59, 130, 246)', bg: 'rgba(59, 130, 246, 0.1)' }, // Blue
+    { border: 'rgb(16, 185, 129)', bg: 'rgba(16, 185, 129, 0.1)' }, // Green
+    { border: 'rgb(239, 68, 68)', bg: 'rgba(239, 68, 68, 0.1)' }, // Red
+    { border: 'rgb(245, 158, 11)', bg: 'rgba(245, 158, 11, 0.1)' }, // Orange
+    { border: 'rgb(139, 92, 246)', bg: 'rgba(139, 92, 246, 0.1)' }, // Purple
+  ];
 
   useEffect(() => {
-    if (viewMode === 'single') {
-      fetchData();
-    }
-  }, [symbol, timeframe, viewMode]);
+    fetchWatchlist();
+  }, []);
 
   useEffect(() => {
-    if (viewMode === 'compare') {
-      fetchCompareData();
+    if (selectedStocks.length > 0) {
+      fetchChartData();
     }
-  }, [timeframe, viewMode, compareSymbols]);
+  }, [selectedStocks, timeframe]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchWatchlist = async () => {
     try {
-      const days = getDaysFromTimeframe(timeframe);
-      const response = await fetch(`/api/stocks/${symbol}/history?days=${days}`);
+      const response = await axios.get('/api/user/watchlist');
+      setWatchlistStocks(response.data);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch stock data');
+      // Auto-select first 2 stocks
+      if (response.data.length > 0) {
+        setSelectedStocks([
+          response.data[0].symbol,
+          response.data.length > 1 ? response.data[1].symbol : null,
+        ].filter(Boolean));
       }
-      
-      const result = await response.json();
-      setData(result.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setData(null);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching watchlist:', error);
     }
   };
 
-  const fetchCompareData = async () => {
-    if (compareSymbols.length === 0) {
-      setCompareData([]);
-      setLoading(false);
-      return;
+  const getDaysFromTimeframe = (tf: '1M' | '3M' | '6M' | '1Y'): number => {
+    switch (tf) {
+      case '1M': return 30;
+      case '3M': return 90;
+      case '6M': return 180;
+      case '1Y': return 365;
+      default: return 90;
     }
+  };
 
+  const fetchChartData = async () => {
     setLoading(true);
-    setError(null);
     try {
       const days = getDaysFromTimeframe(timeframe);
-      const promises = compareSymbols.map(sym =>
-        fetch(`/api/stocks/${sym}/history?days=${days}`)
-          .then(res => {
-            if (!res.ok) throw new Error(`Failed to fetch ${sym}`);
-            return res.json();
-          })
-      );
-      
-      const results = await Promise.all(promises);
-      const formattedData: StockCompareData[] = results.map((result, index) => ({
-        symbol: compareSymbols[index],
-        timestamps: result.data.timestamps,
-        close: result.data.close,
-        volume: result.data.volume,
-      }));
-      
-      console.log('Compare data loaded:', formattedData);
-      setCompareData(formattedData);
-    } catch (err) {
-      console.error('Error fetching compare data:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setCompareData([]);
+      const datasets: any[] = [];
+      let commonLabels: string[] = [];
+
+      for (let i = 0; i < selectedStocks.length; i++) {
+        const symbol = selectedStocks[i];
+        const response = await axios.get(`/api/stockdata/history/${symbol}?days=${days}`);
+        
+        if (response.data.success && response.data.data) {
+          const data = response.data.data;
+          
+          // Use first stock's timestamps as common labels
+          if (i === 0) {
+            commonLabels = data.timestamps.map((ts: string) => 
+              new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            );
+          }
+          
+          // Normalize prices to percentage change from start
+          const startPrice = data.close[0];
+          const normalizedPrices = data.close.map((price: number) => 
+            ((price - startPrice) / startPrice) * 100
+          );
+          
+          datasets.push({
+            label: symbol,
+            data: normalizedPrices,
+            borderColor: colors[i % colors.length].border,
+            backgroundColor: colors[i % colors.length].bg,
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+          });
+        }
+      }
+
+      setLabels(commonLabels);
+      setChartDatasets(datasets);
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSymbolSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const newSymbol = formData.get('symbol') as string;
-    if (newSymbol) {
-      setSymbol(newSymbol.toUpperCase());
+  const toggleStock = (symbol: string) => {
+    if (selectedStocks.includes(symbol)) {
+      setSelectedStocks(selectedStocks.filter(s => s !== symbol));
+    } else {
+      if (selectedStocks.length < 5) {
+        setSelectedStocks([...selectedStocks, symbol]);
+      } else {
+        alert('Tối đa 5 cổ phiếu');
+      }
     }
   };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Stock Performance Comparison (% Change)',
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false,
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+          }
+        }
+      },
+    },
+    scales: {
+      y: {
+        ticks: {
+          callback: function(value: any) {
+            return value + '%';
+          }
+        },
+        title: {
+          display: true,
+          text: 'Change (%)'
+        }
+      },
+      x: {
+        ticks: {
+          maxTicksLimit: 10,
+        }
+      }
+    },
+    interaction: {
+      mode: 'nearest' as const,
+      axis: 'x' as const,
+      intersect: false
+    },
+  };
+
+  const chartData = {
+    labels,
+    datasets: chartDatasets,
+  };
+
+  if (watchlistStocks.length === 0) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Compare Charts</h2>
+          <p className="text-gray-600 mb-4">Watchlist trống</p>
+          <a 
+            href="/watchlist" 
+            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Thêm cổ phiếu vào watchlist
+          </a>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header with Title and Menu */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Biểu đồ kỹ thuật</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode('single')}
-              className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                viewMode === 'single'
-                  ? 'border-blue-600 bg-blue-600 text-white'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Các chỉ báo
-            </button>
-            <button
-              onClick={() => setViewMode('compare')}
-              className={`rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                viewMode === 'compare'
-                  ? 'border-blue-600 bg-blue-600 text-white'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              So sánh
-            </button>
-          </div>
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Compare Charts</h1>
+          <p className="text-gray-600">So sánh hiệu suất của nhiều cổ phiếu</p>
         </div>
 
-        {/* Symbol Search or Selector based on view mode */}
-        {viewMode === 'single' ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <form onSubmit={handleSymbolSubmit} className="flex gap-4">
-              <input
-                type="text"
-                name="symbol"
-                defaultValue={symbol}
-                placeholder="Nhập mã cổ phiếu (VD: VNM, VCB, HPG)"
-                className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Tải
-              </button>
-            </form>
-          </div>
-        ) : (
-          <StockSelector
-            selectedSymbols={compareSymbols}
-            onSymbolsChange={setCompareSymbols}
-            maxSelections={3}
-          />
-        )}
-
-        {/* Timeframe Selector */}
-        <div className="flex gap-2">
-          {timeframes.map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                timeframe === tf
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm">
-            <div className="text-gray-600">Đang tải dữ liệu...</div>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
-            <p className="font-medium">Lỗi tải dữ liệu</p>
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Chart */}
-        {!loading && !error && viewMode === 'single' && data && (
-          <CombinedChart data={data} symbol={symbol} />
-        )}
-
-        {/* Compare Chart */}
-        {viewMode === 'compare' && !loading && !error && (
-          <>
-            {/* Debug info */}
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
-              <p className="text-blue-800">
-                <strong>Debug:</strong> Đã chọn {compareSymbols.length} mã ({compareSymbols.join(', ')}), 
-                Đã load {compareData.length} mã dữ liệu
+        {/* Controls */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="space-y-4">
+            {/* Stock Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chọn cổ phiếu để so sánh (tối đa 5)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {watchlistStocks.map((stock) => (
+                  <button
+                    key={stock.symbol}
+                    onClick={() => toggleStock(stock.symbol)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      selectedStocks.includes(stock.symbol)
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {stock.symbol}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Đã chọn: {selectedStocks.length}/5
               </p>
             </div>
-            
-            {compareData.length > 0 ? (
-              <CompareChart data={compareData} />
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-                <p className="text-gray-600">Vui lòng chọn ít nhất 1 mã cổ phiếu để so sánh</p>
+
+            {/* Timeframe Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Khung thời gian
+              </label>
+              <div className="flex gap-2">
+                {(['1M', '3M', '6M', '1Y'] as const).map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      timeframe === tf
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
               </div>
-            )}
-          </>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          {loading ? (
+            <div className="h-96 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading chart...</p>
+              </div>
+            </div>
+          ) : selectedStocks.length === 0 ? (
+            <div className="h-96 flex items-center justify-center">
+              <p className="text-gray-500">Chọn ít nhất 1 cổ phiếu để xem biểu đồ</p>
+            </div>
+          ) : (
+            <div style={{ height: '500px' }}>
+              <Line options={chartOptions} data={chartData} />
+            </div>
+          )}
+        </div>
+
+        {/* Stats */}
+        {selectedStocks.length > 0 && chartDatasets.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {chartDatasets.map((dataset, index) => {
+              const lastValue = dataset.data[dataset.data.length - 1];
+              const isPositive = lastValue >= 0;
+              
+              return (
+                <div key={dataset.label} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-bold text-gray-900">{dataset.label}</span>
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: dataset.borderColor }}
+                    ></div>
+                  </div>
+                  <div className={`text-3xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {isPositive ? '+' : ''}{lastValue.toFixed(2)}%
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {timeframe} performance
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </MainLayout>

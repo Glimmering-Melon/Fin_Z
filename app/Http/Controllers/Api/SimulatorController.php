@@ -26,13 +26,21 @@ class SimulatorController extends Controller
             $result = $this->simulator->simulate(
                 amount: $request->validated('amount'),
                 symbol: $request->validated('symbol'),
-                startDate: $request->validated('start_date')
+                startDate: $request->validated('start_date'),
+                endDate: $request->validated('end_date')
             );
 
+            // Format response for frontend
             return response()->json([
-                'success' => true,
-                'data' => $result,
-                'message' => 'Simulation completed successfully'
+                'symbol' => $result['stock']['symbol'],
+                'initialInvestment' => $result['investment']['actual_amount'],
+                'finalValue' => $result['returns']['current_value'],
+                'profit' => $result['returns']['profit_loss'],
+                'profitPercent' => $result['returns']['profit_loss_percentage'],
+                'startDate' => $result['investment']['start_date'],
+                'endDate' => $result['investment']['end_date'],
+                'startPrice' => $result['prices']['start_price'],
+                'endPrice' => $result['prices']['current_price'],
             ]);
 
         } catch (\InvalidArgumentException $e) {

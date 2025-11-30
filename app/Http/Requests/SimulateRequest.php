@@ -25,8 +25,8 @@ class SimulateRequest extends FormRequest
             'amount' => [
                 'required',
                 'numeric',
-                'min:1000000', // Minimum 1 million VND
-                'max:10000000000', // Maximum 10 billion VND
+                'min:100', // Minimum $100
+                'max:10000000', // Maximum $10 million
             ],
             'symbol' => [
                 'required',
@@ -39,6 +39,12 @@ class SimulateRequest extends FormRequest
                 'date',
                 'before_or_equal:today',
                 'after:2000-01-01', // Reasonable date range
+            ],
+            'end_date' => [
+                'nullable',
+                'date',
+                'before_or_equal:today',
+                'after:start_date',
             ],
         ];
     }
@@ -53,8 +59,8 @@ class SimulateRequest extends FormRequest
         return [
             'amount.required' => 'Vui lòng nhập số tiền đầu tư',
             'amount.numeric' => 'Số tiền đầu tư phải là số',
-            'amount.min' => 'Số tiền đầu tư tối thiểu là 1,000,000 VND',
-            'amount.max' => 'Số tiền đầu tư tối đa là 10,000,000,000 VND',
+            'amount.min' => 'Số tiền đầu tư tối thiểu là $100',
+            'amount.max' => 'Số tiền đầu tư tối đa là $10,000,000',
             
             'symbol.required' => 'Vui lòng nhập mã cổ phiếu',
             'symbol.string' => 'Mã cổ phiếu không hợp lệ',
@@ -65,6 +71,10 @@ class SimulateRequest extends FormRequest
             'start_date.date' => 'Ngày bắt đầu không hợp lệ',
             'start_date.before_or_equal' => 'Ngày bắt đầu không được trong tương lai',
             'start_date.after' => 'Ngày bắt đầu phải sau năm 2000',
+            
+            'end_date.date' => 'Ngày kết thúc không hợp lệ',
+            'end_date.before_or_equal' => 'Ngày kết thúc không được trong tương lai',
+            'end_date.after' => 'Ngày kết thúc phải sau ngày bắt đầu',
         ];
     }
 

@@ -1,10 +1,53 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface SentimentBadgeProps {
-  sentiment: 'positive' | 'negative' | 'neutral';
+  sentiment: 'positive' | 'neutral' | 'negative';
+  score?: number;
+  showScore?: boolean;
+  className?: string;
 }
 
-export default function SentimentBadge({ sentiment }: SentimentBadgeProps) {
-  // TODO: Color-coded badge (green/red/gray)
-  return <span>{sentiment}</span>;
+export default function SentimentBadge({
+  sentiment,
+  score,
+  showScore = false,
+  className,
+}: SentimentBadgeProps) {
+  const sentimentConfig = {
+    positive: {
+      bg: 'bg-green-500',
+      text: 'text-white',
+      label: 'Positive',
+    },
+    neutral: {
+      bg: 'bg-gray-500',
+      text: 'text-white',
+      label: 'Neutral',
+    },
+    negative: {
+      bg: 'bg-red-500',
+      text: 'text-white',
+      label: 'Negative',
+    },
+  };
+
+  const config = sentimentConfig[sentiment];
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+        config.bg,
+        config.text,
+        className
+      )}
+      title={score ? `Score: ${score.toFixed(2)}` : undefined}
+    >
+      <span>{config.label}</span>
+      {showScore && score !== undefined && (
+        <span className="opacity-90">({score.toFixed(2)})</span>
+      )}
+    </span>
+  );
 }

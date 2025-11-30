@@ -10,51 +10,62 @@ class HeatmapController extends Controller
 {
     public function index(Request $request)
     {
-        // TODO: Return heatmap data with filters (sector, timeframe)
-        $query = Stock::query();
-        $query->with(['latestPrice' => function ($q) {
-            $q->select(
-                'stock_prices.stock_id', 
-                'stock_prices.date', 
-                'stock_prices.open', 
-                'stock_prices.close', 
-                'stock_prices.volume'
-            );
-        }]);
-
-        if ($request->has('exchange')) {
-            $query->where('exchange', $request->input('exchange'));
+        $userId = auth()->id() ?? 1; // Default to user 1 for testing
+        
+        // Get stocks from user's watchlist
+        $watchlistStockIds = \App\Models\Watchlist::where('user_id', $userId)
+            ->pluck('stock_id');
+        
+        if ($watchlistStockIds->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [],
+                'meta' => [
+                    'total_stocks' => 0,
+                    'timestamp' => now()->toIso8601String(),
+                    'message' => 'No stocks in watchlist'
+                ]
+            ]);
         }
-        if ($request->has('sector')) {
-            $query->where('sector', $request->input('sector'));
-        }
-        $stocks = $query->get();
-        $heatmapData = $stocks 
-        -> filter(function ($stock) {
-        return $stock->latestPrice !== null && $stock->latestPrice->open > 0;
-        })
-        -> map(function ($stock) {
-                $price = $stock->latestPrice;
-                $changePercent = (($price->close - $price->open) / $price->open) * 100;
+        
+        // Get stock data with latest prices
+        $stocks = Stock::whereIn('id', $watchlistStockIds)
+            ->with(['latestPrice'])
+            ->get();
+        
+        $heatmapData = $stocks
+            ->filter(function ($stock) {
+                return $stock->latestPrice !== null;
+            })
+            ->map(function ($stock) {
+                $latestPrice = $stock->latestPrice;
+                
+                // Get previous price for change calculation
+                $previousPrice = \App\Models\StockPrice::where('stock_id', $stock->id)
+                    ->where('date', '<', $latestPrice->date)
+                    ->orderBy('date', 'desc')
+                    ->first();
+                
+                $changePercent = 0;
+                if ($previousPrice && $previousPrice->close > 0) {
+                    $changePercent = (($latestPrice->close - $previousPrice->close) / $previousPrice->close) * 100;
+                }
+                
                 return [
                     'symbol' => $stock->symbol,
-                    'name'   => $stock->name,
-                    'sector' => $stock->sector,
-                    'price'  => $price->close,
-                    'volume' => $price->volume, 
-                    'change' => round($changePercent, 2), 
+                    'name' => $stock->name,
+                    'sector' => $stock->sector ?? 'Other',
+                    'exchange' => $stock->exchange,
+                    'price' => (float) $latestPrice->close,
+                    'volume' => (int) $latestPrice->volume,
+                    'change' => round($changePercent, 2),
+                    'marketCap' => (float) $latestPrice->close * (int) $latestPrice->volume, // Approximate
                 ];
-        });
-        $groupedData = $heatmapData->groupBy('sector')->map(function ($items, $sector) {
-            return [
-                'name' => $sector,
-                'total_volume' => $items->sum('volume'),
-                'stocks' => $items->values() 
-            ];
-        })->values();
+            });
+        
         return response()->json([
             'status' => 'success',
-            'data' => $groupedData,
+            'data' => $heatmapData->values(),
             'meta' => [
                 'total_stocks' => $heatmapData->count(),
                 'timestamp' => now()->toIso8601String()

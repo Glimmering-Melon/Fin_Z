@@ -12,7 +12,7 @@ class WatchlistController extends Controller
 {
     public function index()
     {
-        $userId = auth()->id();
+        $userId = auth()->id() ?? 1; // Default to user 1 for testing
 
         $watchlist = Watchlist::where('user_id', $userId)
             ->with(['stock' => function ($query) {
@@ -70,27 +70,38 @@ class WatchlistController extends Controller
                 'exchange' => $item->stock->exchange,
                 'price' => $price,
                 'change' => round($change, 2),
-                'changePercent' => round($changePercent, 2),
+                'change_percent' => round($changePercent, 2),
                 'volume' => $latestPrice ? (int) $latestPrice->volume : 0,
+                'high' => $latestPrice ? (float) $latestPrice->high : $price,
+                'low' => $latestPrice ? (float) $latestPrice->low : $price,
+                'open' => $latestPrice ? (float) $latestPrice->open : $price,
             ];
         });
 
-        return response()->json([
-            'watchlist' => $data,
-        ]);
+        return response()->json($data);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'stock_id' => ['required', 'exists:stocks,id'],
+            'symbol' => ['required', 'string'],
         ]);
 
-        $userId = auth()->id();
-        $stockId = $request->input('stock_id');
+        $userId = auth()->id() ?? 1; // Default to user 1 for testing
+        $symbol = strtoupper($request->input('symbol'));
 
+        // Find stock by symbol
+        $stock = Stock::where('symbol', $symbol)->first();
+
+        if (!$stock) {
+            return response()->json([
+                'message' => 'Stock not found',
+            ], 404);
+        }
+
+        // Check if already in watchlist
         $exists = Watchlist::where('user_id', $userId)
-            ->where('stock_id', $stockId)
+            ->where('stock_id', $stock->id)
             ->exists();
 
         if ($exists) {
@@ -101,7 +112,7 @@ class WatchlistController extends Controller
 
         $watchlist = Watchlist::create([
             'user_id' => $userId,
-            'stock_id' => $stockId,
+            'stock_id' => $stock->id,
         ]);
 
         return response()->json([
@@ -112,7 +123,7 @@ class WatchlistController extends Controller
 
     public function destroy(Request $request, int $id)
     {
-        $userId = auth()->id();
+        $userId = auth()->id() ?? 1; // Default to user 1 for testing
 
         $watchlist = Watchlist::where('id', $id)
             ->where('user_id', $userId)

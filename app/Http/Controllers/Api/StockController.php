@@ -18,7 +18,17 @@ class StockController extends Controller
 
     public function index()
     {
-        // TODO: Return list of stocks with filters
+        // Only return stocks that have price data
+        $stocks = \App\Models\Stock::select('id', 'symbol', 'name', 'exchange', 'sector')
+            ->whereHas('prices')
+            ->orderBy('symbol', 'asc')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $stocks,
+            'count' => $stocks->count(),
+        ]);
     }
 
     public function show($symbol)
