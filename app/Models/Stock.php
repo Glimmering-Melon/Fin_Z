@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne; 
 
 class Stock extends Model
 {
@@ -18,6 +19,10 @@ class Stock extends Model
     public function prices(): HasMany
     {
         return $this->hasMany(StockPrice::class);
+    }
+    public function latestPrice(): HasOne
+    {
+        return $this->hasOne(StockPrice::class)->latestOfMany('date');
     }
 
     public function alerts(): HasMany
