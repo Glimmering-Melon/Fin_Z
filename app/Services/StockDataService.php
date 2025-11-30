@@ -31,15 +31,18 @@ class StockDataService
 
         // Get data from database
         $prices = StockPrice::where('stock_id', $stock->id)
-            ->orderBy('date', 'asc')
+            ->orderBy('date', 'desc')
             ->limit($days)
-            ->get();
+            ->get()
+            ->reverse()
+            ->values();
 
-        // If no data or data is old, fetch from API
-        if ($prices->isEmpty() || $this->isDataStale($prices)) {
+        // If no data, try fetch from API
+        if ($prices->isEmpty()) {
             return $this->fetchAndSaveFromAPI($symbol, $days);
         }
 
+        // Return data from database even if stale (for demo purposes)
         return $this->formatPriceData($prices);
     }
 

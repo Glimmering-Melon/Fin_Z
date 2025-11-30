@@ -15,7 +15,7 @@ class AlphaVantageService
     public function __construct()
     {
         $this->baseUrl = config('services.alpha_vantage.base_url');
-        $this->apiKey = config('services.alpha_vantage.key');
+        $this->apiKey = config('services.alpha_vantage.key') ?: 'MAI12UQVHP7M1W8H';
         $this->timeout = config('services.alpha_vantage.timeout', 15);
     }
 
