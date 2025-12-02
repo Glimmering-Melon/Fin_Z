@@ -12,15 +12,14 @@ use Inertia\Inertia;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
 
-// Test route (remove after debugging)
-Route::get('/test', function () {
-    return response()->json([
-        'status' => 'ok',
-        'message' => 'Laravel is working!',
-        'auth' => auth()->check() ? 'Authenticated' : 'Guest',
-        'user' => auth()->user(),
-    ]);
-});
+// Test routes (no auth required)
+Route::get('/test/watchlist', function () {
+    return Inertia::render('WatchlistTest');
+})->name('test.watchlist');
+
+Route::get('/test/chart', function () {
+    return Inertia::render('ChartTest');
+})->name('test.chart');
 
 // Guest routes (authentication)
 Route::middleware(['guest'])->group(function () {

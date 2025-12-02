@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import MainLayout from '@/Components/MainLayout';
 import StockQuote from '@/Components/Dashboard/StockQuote';
-import StockChart from '@/Components/Dashboard/StockChart';
+import CandlestickChart from '@/Components/Charts/CandlestickChart';
+import WatchlistWidget from '@/Components/WatchlistWidget';
 
 interface DashboardProps {
   initialData?: {
@@ -61,29 +62,11 @@ export default function Dashboard({ initialData }: DashboardProps) {
             />
           </div>
 
-          {/* Chart Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Price Chart</h3>
-              <div className="flex space-x-2">
-                {timeframes.map((tf) => (
-                  <button
-                    key={tf}
-                    onClick={() => setSelectedTimeframe(tf)}
-                    className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
-                      selectedTimeframe === tf
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <StockChart symbol={selectedSymbol} timeframe={selectedTimeframe} />
-          </div>
+          {/* Candlestick Chart */}
+          <CandlestickChart symbol={selectedSymbol} height={500} />
+
+          {/* Watchlist Widget */}
+          <WatchlistWidget />
 
           {/* Heatmap Preview */}
           <div className="bg-white rounded-lg shadow p-6">

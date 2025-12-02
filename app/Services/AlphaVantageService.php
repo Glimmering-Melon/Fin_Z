@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Log;
 class AlphaVantageService
 {
     private string $baseUrl;
-    private string $apiKey;
+    private ?string $apiKey;
     private int $timeout;
 
     public function __construct()
     {
-        $this->baseUrl = config('services.alpha_vantage.base_url');
-        $this->apiKey = config('services.alpha_vantage.key');
+        $this->baseUrl = config('services.alpha_vantage.base_url', 'https://www.alphavantage.co');
+        $this->apiKey = config('services.alpha_vantage.key', '');
         $this->timeout = config('services.alpha_vantage.timeout', 15);
     }
 

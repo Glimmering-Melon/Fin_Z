@@ -94,3 +94,6 @@ Route::get('/user/watchlist', [WatchlistController::class, 'index']);
 Route::post('/user/watchlist', [WatchlistController::class, 'store']);
 Route::delete('/user/watchlist/{id}', [WatchlistController::class, 'destroy']);
 Route::get('/stocks/search', [WatchlistController::class, 'search']);
+
+// Candlestick data
+Route::get('/stocks/{symbol}/candles', [\App\Http\Controllers\Api\WatchlistController::class, 'candles']);

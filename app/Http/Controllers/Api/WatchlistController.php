@@ -173,4 +173,14 @@ class WatchlistController extends Controller
         
         return response()->json($results);
     }
+
+    public function candles(Request $request, $symbol)
+    {
+        $timeframe = $request->get('timeframe', '1D');
+        $limit = $request->get('limit', 100);
+        
+        $candles = $this->stockPriceService->getCandlestickData($symbol, $timeframe, $limit);
+        
+        return response()->json($candles);
+    }
 }
