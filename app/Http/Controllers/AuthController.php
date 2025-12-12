@@ -58,6 +58,9 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Create default watchlist for new user
+        $this->createDefaultWatchlist($user->id);
+
         Auth::login($user);
 
         return redirect()->route('dashboard');
@@ -71,5 +74,38 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    /**
+     * Create default watchlist for new users
+     */
+    private function createDefaultWatchlist(int $userId): void
+    {
+        $defaultStocks = [
+            ['AAPL', 'Apple Inc.'],
+            ['MSFT', 'Microsoft Corporation'],
+            ['GOOGL', 'Alphabet Inc.'],
+            ['AMZN', 'Amazon.com Inc.'],
+            ['META', 'Meta Platforms Inc.'],
+        ];
+        
+        foreach ($defaultStocks as [$symbol, $name]) {
+            try {
+                // Create or get stock
+                $stock = \App\Models\Stock::firstOrCreate(
+                    ['symbol' => $symbol],
+                    ['name' => $name]
+                );
+                
+                // Add to user's watchlist
+                \App\Models\Watchlist::create([
+                    'user_id' => $userId,
+                    'stock_id' => $stock->id,
+                ]);
+                
+            } catch (\Exception $e) {
+                \Log::error("Failed to create default watchlist for user {$userId}: " . $e->getMessage());
+            }
+        }
     }
 }

@@ -69,6 +69,9 @@ Route::get('/stocks/{symbol}/history', [StockController::class, 'history']);
 Route::get('/news', [NewsController::class, 'index']);
 Route::get('/news/sentiment', [NewsController::class, 'sentiment']);
 
+// Fresh news API for refresh functionality (no auth middleware for now)
+Route::get('/news/fresh', [\App\Http\Controllers\Api\NewsApiController::class, 'index']);
+
 // Watchlist (temporarily without auth for testing)
 Route::get('/user/watchlist', [WatchlistController::class, 'index']);
 Route::post('/user/watchlist', [WatchlistController::class, 'store']);

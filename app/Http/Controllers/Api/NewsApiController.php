@@ -1,50 +1,42 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use Inertia\Inertia;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 
-class NewsController extends Controller
+class NewsApiController extends Controller
 {
-    public function index()
+    /**
+     * Get fresh news data for current user
+     */
+    public function index(): JsonResponse
     {
-        // Clear any cached data to ensure fresh results
-        if (request()->has('refresh') || request()->has('bust')) {
-            \Cache::flush();
-        }
+        // Try to get user ID from session or default to 1 for testing
+        $userId = auth()->id() ?? 1;
         
-        $userId = auth()->id() ?? 1; // Default to user 1 for testing
-        
-        \Log::info("NewsController: Processing request for user {$userId}", [
-            'auth_user' => auth()->user()?->email ?? 'not authenticated',
-            'request_params' => request()->all()
+        \Log::info("Fresh News API: Processing request for user {$userId}", [
+            'auth_check' => auth()->check(),
+            'session_id' => session()->getId()
         ]);
         
-        // Get stocks from user's watchlist
+        // Force fresh query - no cache
         $watchlistStocks = \App\Models\Watchlist::where('user_id', $userId)
             ->with('stock')
-            ->get();
+            ->get()
+            ->fresh(); // Force fresh from database
             
-        \Log::info("NewsController: User {$userId} has " . $watchlistStocks->count() . " watchlist items", [
+        \Log::info("API: Fresh watchlist query for user {$userId}", [
+            'count' => $watchlistStocks->count(),
             'symbols' => $watchlistStocks->pluck('stock.symbol')->toArray()
         ]);
         
         if ($watchlistStocks->isEmpty()) {
-            // Auto-create default watchlist for new users
-            $this->createDefaultWatchlist($userId);
-            
-            // Re-fetch watchlist after creating default stocks
-            $watchlistStocks = \App\Models\Watchlist::where('user_id', $userId)
-                ->with('stock')
-                ->get();
-            
-            // If still empty, return empty news
-            if ($watchlistStocks->isEmpty()) {
-                return Inertia::render('News/Index', [
-                    'news' => [],
-                    'watchlistStocks' => [],
-                ]);
-            }
+            return response()->json([
+                'news' => [],
+                'watchlistStocks' => [],
+                'message' => 'No watchlist stocks found'
+            ]);
         }
         
         // Get news for each stock from Finnhub
@@ -52,8 +44,6 @@ class NewsController extends Controller
         $finnhubApiKey = env('FINNHUB_API_KEY');
         $from = now()->subDays(7)->format('Y-m-d');
         $to = now()->format('Y-m-d');
-        
-        \Log::info("Fetching news for " . $watchlistStocks->count() . " stocks");
         
         // Create a map of stock symbols to names
         $stockMap = $watchlistStocks->pluck('stock.name', 'stock.symbol')->toArray();
@@ -63,7 +53,7 @@ class NewsController extends Controller
             $symbol = $watchlistItem->stock->symbol;
             
             try {
-                \Log::info("Fetching news for {$symbol}");
+                \Log::info("API: Fetching news for {$symbol}");
                 
                 $response = \Http::timeout(15)->get('https://finnhub.io/api/v1/company-news', [
                     'symbol' => $symbol,
@@ -74,7 +64,6 @@ class NewsController extends Controller
                 
                 if ($response->successful()) {
                     $newsData = $response->json();
-                    \Log::info("Got " . count($newsData) . " articles for {$symbol}");
                     
                     // Take only first 10 articles per stock
                     foreach (array_slice($newsData, 0, 10) as $item) {
@@ -106,16 +95,12 @@ class NewsController extends Controller
                             ]);
                         }
                     }
-                } else {
-                    \Log::error("API error for {$symbol}: " . $response->status());
                 }
                 
             } catch (\Exception $e) {
-                \Log::error("Error fetching news for {$symbol}: " . $e->getMessage());
+                \Log::error("API: Error fetching news for {$symbol}: " . $e->getMessage());
             }
         }
-        
-        \Log::info("Total unique news: " . $newsById->count());
         
         // Sort by published date (newest first)
         $transformedNews = $newsById
@@ -123,50 +108,14 @@ class NewsController extends Controller
             ->values()
             ->toArray();
         
-        return Inertia::render('News/Index', [
+        return response()->json([
             'news' => $transformedNews,
             'watchlistStocks' => $watchlistStocks->map(fn($item) => [
                 'symbol' => $item->stock->symbol,
                 'name' => $item->stock->name,
             ])->toArray(),
+            'timestamp' => now()->toISOString(),
         ]);
-    }
-    
-    /**
-     * Create default watchlist for new users
-     */
-    private function createDefaultWatchlist(int $userId): void
-    {
-        $defaultStocks = [
-            ['AAPL', 'Apple Inc.'],
-            ['MSFT', 'Microsoft Corporation'],
-            ['GOOGL', 'Alphabet Inc.'],
-            ['AMZN', 'Amazon.com Inc.'],
-            ['META', 'Meta Platforms Inc.'],
-        ];
-        
-        \Log::info("Creating default watchlist for user {$userId}");
-        
-        foreach ($defaultStocks as [$symbol, $name]) {
-            try {
-                // Create or get stock
-                $stock = \App\Models\Stock::firstOrCreate(
-                    ['symbol' => $symbol],
-                    ['name' => $name]
-                );
-                
-                // Add to user's watchlist if not already exists
-                \App\Models\Watchlist::firstOrCreate([
-                    'user_id' => $userId,
-                    'stock_id' => $stock->id,
-                ]);
-                
-                \Log::info("Added {$symbol} to user {$userId} watchlist");
-                
-            } catch (\Exception $e) {
-                \Log::error("Failed to add {$symbol} to watchlist: " . $e->getMessage());
-            }
-        }
     }
     
     /**
