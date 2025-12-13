@@ -121,13 +121,6 @@ php artisan stocks:detect-anomalies
 php artisan logs:cleanup
 ```
 
-## Tech Stack
-
-- **Backend**: Laravel 12
-- **Frontend**: React 19 + Inertia.js
-- **Charts**: Chart.js, D3.js
-- **Styling**: Tailwind CSS
-- **Database**: MySQL
 
 ## TODO
 
